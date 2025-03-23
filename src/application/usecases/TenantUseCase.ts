@@ -122,7 +122,6 @@ export class TenantUseCase {
             if (instanceId) await CleanupResources.terminateEC2(instanceId);
             if (targetGroupArn) await CleanupResources.deleteTargetGroup(targetGroupArn);
             if (listenerRuleArn) await CleanupResources.deleteListenerRule(listenerRuleArn);
-            await CleanupResources.deleteDNSRecord(subdomain);
             await CleanupResources.deleteTenantRecord(tenantId);
 
             throw new Error("❌ Tenant provisioning failed and cleanup was triggered.");
