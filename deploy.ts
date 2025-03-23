@@ -46,6 +46,9 @@ export class ProvisionEC2 {
 
           # Install Bun
           curl -fsSL https://bun.sh/install | bash
+          export BUN_INSTALL="/home/ec2-user/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          sudo chown -R ec2-user:ec2-user .
 
           # Install dependencies & run
           bun install
