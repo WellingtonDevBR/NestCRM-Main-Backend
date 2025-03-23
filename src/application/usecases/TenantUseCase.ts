@@ -89,8 +89,8 @@ export class TenantUseCase {
             console.log(`✅ EC2 Instance Launched: ${instanceId}, IP: ${ec2Instance.publicIp}`);
 
             const listenerResources = await CreateTargetGroupAndListenerRule.setup(subdomain, instanceId);
-            targetGroupArn = listenerResources.targetGroupArn;
-            listenerRuleArn = listenerResources.listenerRuleArn;
+            targetGroupArn = listenerResources!.targetGroupArn;
+            listenerRuleArn = listenerResources!.listenerRuleArn;
 
             console.log(`🌍 CloudFront will route ${domain} through ALB`);
 
