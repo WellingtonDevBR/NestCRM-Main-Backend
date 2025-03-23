@@ -30,15 +30,32 @@ export class ProvisionEC2 {
                     },
                 ],
                 UserData: Buffer.from(`#!/bin/bash
-                    yum update -y
-                    yum install -y git nodejs
+                    sudo yum update -y
+                    sudo yum install -y git nodejs unzip
+                    
+                    # Configure AWS credentials (non-interactive)
+                    mkdir -p /home/ec2-user/.aws
+                    cat <<EOT >> /home/ec2-user/.aws/credentials
+                    [default]
+                    aws_access_key_id=${process.env.AWS_ACCESS_KEY_ID}
+                    aws_secret_access_key=${process.env.AWS_SECRET_ACCESS_KEY}
+                    EOT
+                    
+                    cat <<EOT >> /home/ec2-user/.aws/config
+                    [default]
+                    region=us-east-2
+                    output=json
+                    EOT
+                    
+                    chown -R ec2-user:ec2-user /home/ec2-user/.aws
+                    
+                    # Clone and start your app
                     cd /home/ec2-user
                     git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
                     cd NestCRM-Dashboard-Backend
-                    npm install
-                    sudo npm install cors
-                    sudo npm install express
-                    nohup node server.js > output.log 2>&1 &
+                    curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+                    sudo yum install -y yarn
+                    nohup yarn dev > output.log 2>&1 &
                 `).toString("base64"),
             });
 
