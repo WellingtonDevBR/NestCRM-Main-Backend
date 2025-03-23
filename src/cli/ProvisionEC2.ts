@@ -34,7 +34,7 @@ export class ProvisionEC2 {
                     yum install -y git nodejs
                     cd /home/ec2-user
                     git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
-                    cd test-frontend
+                    cd NestCRM-Dashboard-Backend
                     npm install
                     sudo npm install cors
                     sudo npm install express
