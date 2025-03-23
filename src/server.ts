@@ -1,12 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { ENV } from "./env";
 import tenantRoutes from "./interfaces/routes/tenantRoutes";
+const PORT: any = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: ENV.FRONTEND_URL,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST", "PUT"],
     credentials: true
 }));
 
@@ -25,7 +25,6 @@ app.get('/api/status', (req: Request, res: Response) => {
 });
 
 // ✅ Start the server
-const PORT = ENV.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`✅ NestCRM Backend is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ NestCRM Backend is running on http://0.0.0.0:${PORT}`);
 });
