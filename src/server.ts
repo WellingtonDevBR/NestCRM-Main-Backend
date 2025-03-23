@@ -5,9 +5,8 @@ const PORT: any = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ["GET", "POST", "PUT"],
-    credentials: true
+    origin: 'https://nestcrm.com.au',
+    credentials: true,
 }));
 
 app.use((req, res, next) => {
