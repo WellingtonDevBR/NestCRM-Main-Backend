@@ -10,6 +10,11 @@ app.use(cors({
     credentials: true
 }));
 
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ➡️ ${req.method} ${req.url}`);
+    next();
+});
+
 
 app.get('/', (_req: Request, res: Response) => {
     res.send('✅ EC2 instance is running and healthy!');
