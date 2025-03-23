@@ -5,7 +5,14 @@ const PORT: any = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: 'https://nestcrm.com.au',
+    origin: (origin, callback) => {
+        const allowedOrigins = ['https://nestcrm.com.au', 'https://www.nestcrm.com.au'];
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 
