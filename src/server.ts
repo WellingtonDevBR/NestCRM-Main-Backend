@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import tenantRoutes from "./interfaces/routes/tenantRoutes";
+import jwt from "jsonwebtoken";
 const PORT: any = process.env.PORT || 3000;
 
 const app = express();
@@ -32,7 +33,9 @@ app.get('/', (_req: Request, res: Response) => {
     res.send('✅ EC2 instance is running and healthy!');
 });
 
-// ✅ Logout
+// ✅ Register routes
+app.use("/api/tenants", tenantRoutes);
+
 app.post('/api/logout', (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "https://nestcrm.com.au");
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -56,10 +59,21 @@ app.post('/api/logout', (req: Request, res: Response) => {
     res.status(200).json({ message: "✅ Logged out + toolbar cleared" });
 });
 
+// 🔍 Validate token
+app.get("/api/validate", (req: Request, res: Response) => {
+    const token = req.cookies.token;
 
-// ✅ Register routes
-app.use("/api/tenants", tenantRoutes);
+    if (!token) {
+        res.status(401).json({ valid: false, error: "No token provided" });
+    }
 
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+        res.status(200).json({ valid: true, payload: decoded });
+    } catch (err) {
+        res.status(401).json({ valid: false, error: "Invalid or expired token" });
+    }
+});
 // ✅ Status
 app.get('/api/status', (_req: Request, res: Response) => {
     res.json({ message: '🟢 API is working fine!' });
