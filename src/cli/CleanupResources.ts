@@ -5,7 +5,6 @@ import {
 import {
     ElasticLoadBalancingV2Client,
     DeleteTargetGroupCommand,
-    RemoveListenerCertificatesCommand,
     DeleteRuleCommand,
 } from "@aws-sdk/client-elastic-load-balancing-v2";
 import {
@@ -15,6 +14,7 @@ import {
 import { docClient } from "../infrastructure/database/DynamoDBClient";
 import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import dotenv from "dotenv";
+import { DeleteTableCommand } from "@aws-sdk/client-dynamodb";
 dotenv.config();
 
 const ec2 = new EC2Client({ region: process.env.AWS_REGION });
@@ -83,4 +83,25 @@ export class CleanupResources {
             console.error("⚠️ Failed to delete tenant from DB:", error);
         }
     }
+
+    static async deleteTenantTables(subdomain: string) {
+        const tables = [
+            `NestCRM-${subdomain}-CustomFields`,
+            `NestCRM-${subdomain}-Customer`
+        ];
+
+        for (const tableName of tables) {
+            try {
+                console.log(`🗑️ Deleting DynamoDB table: ${tableName}`);
+                await docClient.send(new DeleteTableCommand({ TableName: tableName }));
+            } catch (error: any) {
+                if (error.name === "ResourceNotFoundException") {
+                    console.warn(`⚠️ Table ${tableName} does not exist`);
+                } else {
+                    console.error(`❌ Failed to delete table ${tableName}:`, error);
+                }
+            }
+        }
+    }
+
 }
