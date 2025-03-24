@@ -1,16 +1,26 @@
-import { EC2Client, RunInstancesCommand, waitUntilInstanceRunning, DescribeInstancesCommand } from "@aws-sdk/client-ec2";
+// ProvisionEC2.ts
+import {
+    EC2Client,
+    RunInstancesCommand,
+    waitUntilInstanceRunning,
+    DescribeInstancesCommand,
+} from "@aws-sdk/client-ec2";
+
 import dotenv from "dotenv";
 dotenv.config();
 
-const ec2 = new EC2Client({
-    region: "us-east-2",
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-});
+const region = "us-east-2";
+const credentials = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+};
+
+const ec2 = new EC2Client({ region, credentials });
 
 export class ProvisionEC2 {
+    // 👇 Just set your role name here (must already exist)
+    private static readonly instanceProfileName = "TenantEC2Role";
+
     static async launchInstance(subdomain: string) {
         try {
             const command = new RunInstancesCommand({
@@ -20,66 +30,51 @@ export class ProvisionEC2 {
                 MaxCount: 1,
                 SubnetId: "subnet-09ba46adbd977b569",
                 SecurityGroupIds: ["sg-0f89eae7985996979"],
+                IamInstanceProfile: {
+                    Name: this.instanceProfileName,
+                },
                 TagSpecifications: [
                     {
                         ResourceType: "instance",
                         Tags: [
                             { Key: "Name", Value: `Tenant-${subdomain}` },
-                            { Key: "OwnerSubdomain", Value: subdomain }
+                            { Key: "OwnerSubdomain", Value: subdomain },
                         ],
                     },
                 ],
                 UserData: Buffer.from(`#!/bin/bash
-                    sudo yum update -y
                     sudo yum install -y git nodejs unzip
-                    
-                    # Configure AWS credentials (non-interactive)
-                    mkdir -p /home/ec2-user/.aws
-                    cat <<EOT >> /home/ec2-user/.aws/credentials
-                    [default]
-                    aws_access_key_id=${process.env.AWS_ACCESS_KEY_ID}
-                    aws_secret_access_key=${process.env.AWS_SECRET_ACCESS_KEY}
-                    EOT
-                    
-                    cat <<EOT >> /home/ec2-user/.aws/config
-                    [default]
-                    region=us-east-2
-                    output=json
-                    EOT
-                    
-                    chown -R ec2-user:ec2-user /home/ec2-user/.aws
-                    
-                    # Clone and start your app
+                    curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+                    sudo yum install -y yarn
                     cd /home/ec2-user
                     git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
                     cd NestCRM-Dashboard-Backend
-                    curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
-                    sudo yum install -y yarn
-                    nohup yarn dev > output.log 2>&1 &
+                    yarn install
+                    nohup yarn dev > /home/ec2-user/app.log 2>&1 &
                 `).toString("base64"),
             });
 
-            // ✅ Launch EC2 Instance
             const result = await ec2.send(command);
             const instanceId = result.Instances?.[0]?.InstanceId;
-
             if (!instanceId) throw new Error("Failed to launch EC2 instance");
 
             console.log(`🕒 Waiting for instance ${instanceId} to be running...`);
-            await waitUntilInstanceRunning({ client: ec2, maxWaitTime: 60 }, { InstanceIds: [instanceId] });
+            await waitUntilInstanceRunning(
+                { client: ec2, maxWaitTime: 60 },
+                { InstanceIds: [instanceId] }
+            );
 
-            // ✅ Fetch Instance Details
-            console.log("🔍 Fetching EC2 Instance Details...");
-            const describeCommand = new DescribeInstancesCommand({ InstanceIds: [instanceId] });
-            const describeResult = await ec2.send(describeCommand);
-            const publicIp = describeResult.Reservations?.[0]?.Instances?.[0]?.PublicIpAddress;
+            const describe = await ec2.send(
+                new DescribeInstancesCommand({ InstanceIds: [instanceId] })
+            );
+            const publicIp =
+                describe.Reservations?.[0]?.Instances?.[0]?.PublicIpAddress;
 
-            if (!publicIp) throw new Error("Instance is running but has no public IP assigned");
+            if (!publicIp) throw new Error("Instance running but no public IP");
 
             console.log(`✅ EC2 Instance Ready: ${instanceId} - ${publicIp}`);
-
             return { instanceId, publicIp };
-        } catch (error: any) {
+        } catch (error) {
             console.error("❌ EC2 Provisioning Failed:", error);
             throw error;
         }
