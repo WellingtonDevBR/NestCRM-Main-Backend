@@ -4,10 +4,11 @@ import tenantRoutes from "./interfaces/routes/tenantRoutes";
 const PORT: any = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
+
 app.use(cors({
     origin: (origin, callback) => {
-        const allowedOrigins = ['https://nestcrm.com.au', 'https://www.nestcrm.com.au'];
-        if (!origin || allowedOrigins.includes(origin)) {
+        const allowedOrigins = [/\.nestcrm\.com\.au$/, 'https://nestcrm.com.au', 'https://www.nestcrm.com.au'];
+        if (!origin || allowedOrigins.some(o => typeof o === 'string' ? o === origin : o.test(origin))) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
@@ -15,6 +16,7 @@ app.use(cors({
     },
     credentials: true,
 }));
+
 
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ➡️ ${req.method} ${req.url}`);
