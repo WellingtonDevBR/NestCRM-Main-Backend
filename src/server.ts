@@ -29,10 +29,23 @@ app.get('/', (_req: Request, res: Response) => {
 // ✅ Register API routes
 app.use("/api/tenants", tenantRoutes);
 
+app.post('/api/logout', (req: Request, res: Response) => {
+    res.setHeader("Set-Cookie", [
+        `token=; Path=/; Domain=.nestcrm.com.au; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None`,
+    ]);
+
+    res.status(200).json({ message: "✅ Logged out successfully" });
+});
+
 app.get('/api/status', (req: Request, res: Response) => {
     res.json({
         message: '🟢 API is working fine!',
     });
+});
+
+await fetch("https://nestcrm.com.au/api/logout", {
+    method: "POST",
+    credentials: "include", // required to send the cookie
 });
 
 // ✅ Start the server
