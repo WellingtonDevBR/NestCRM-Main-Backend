@@ -54,7 +54,6 @@ export class ProvisionEC2 {
                     pm2 start yarn --interpreter bash --name my-server -- ts-node-dev src/server.ts
                     pm2 save
                     pm2 startup
-                    nohup yarn dev > /home/ec2-user/app.log 2>&1 &
                 `).toString("base64"),
             });
 
