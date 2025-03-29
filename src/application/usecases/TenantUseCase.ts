@@ -5,8 +5,7 @@ import { ProvisionEC2 } from "../../cli/ProvisionEC2";
 import { CreateTargetGroupAndListenerRule } from "../../cli/CreateTargetGroupAndListenerRule";
 import { CleanupResources } from "../../cli/CleanupResources";
 import jwt from "jsonwebtoken";
-import { CreateCustomFieldTableForTenant } from "../../cli/CreateCustomFieldTableForTenant";
-import { createCustomerTableForTenant } from "../../cli/CreateCustomerTableForTenant";
+import { createTablesForTenant } from "../../cli/CreateTenantTables";
 
 const tenantRepo = new TenantRepositoryImpl();
 
@@ -52,7 +51,7 @@ export class TenantUseCase {
         email: string;
         password: string;
     }) {
-        console.log("🟢 Received Sign-Up Request:", { companyName, email, password });
+        console.log("🟢 Received Sign-Up Request:", { companyName, email });
 
         if (!companyName || !email || !password) {
             throw new Error("❌ Missing required fields");
@@ -61,18 +60,11 @@ export class TenantUseCase {
         const existingTenant = await tenantRepo.findByEmail(email);
         if (existingTenant) throw new Error("❌ Tenant with this email already exists.");
 
-        console.log("✅ Email is available, proceeding with registration...");
-
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log("🔐 Password hashed successfully");
-
         const subdomain = companyName.toLowerCase().replace(/\s+/g, "");
         const domain = `${subdomain}.nestcrm.com.au`;
-
-        console.log("🌍 Generated Subdomain:", subdomain);
-        console.log("🌍 Generated Domain:", domain);
-
         const tenantId = uuidv4();
+
         let instanceId: string | null = null;
         let targetGroupArn: string | null = null;
         let listenerRuleArn: string | null = null;
@@ -89,26 +81,17 @@ export class TenantUseCase {
                 CreatedAt: new Date().toISOString(),
             };
 
-            console.log("📝 Creating Tenant in DB:", newTenant);
+            console.log("📝 Creating Tenant in DB...");
             await tenantRepo.create(newTenant);
-            console.log("✅ Tenant created successfully!");
 
-            // ✅ Create tenant-specific DynamoDB table for custom fields
-            console.log(`📦 Creating DynamoDB table for custom fields for ${subdomain}...`);
-            await CreateCustomFieldTableForTenant(subdomain);
-            console.log(`✅ DynamoDB table for ${subdomain} created!`);
+            console.log(`📦 Creating all DynamoDB tables for ${subdomain}...`);
+            await createTablesForTenant(subdomain);
+            console.log("✅ Tables created!");
 
-            console.log(`📦 Creating DynamoDB table for customer fields for ${subdomain}...`);
-            await createCustomerTableForTenant(subdomain); // ✅ Add this
-            console.log(`✅ DynamoDB table for customer created`);
-
-            // ✅ Provision EC2
-            console.log(`🚀 Provisioning EC2 instance for ${companyName}...`);
+            console.log(`🚀 Provisioning EC2 for ${companyName}...`);
             const ec2Instance = await ProvisionEC2.launchInstance(subdomain);
             instanceId = ec2Instance.instanceId;
-            console.log(`✅ EC2 Instance Launched: ${instanceId}, IP: ${ec2Instance.publicIp}`);
 
-            // ✅ Create Target Group & Listener Rule
             const listenerResources = await CreateTargetGroupAndListenerRule.setup(
                 subdomain,
                 instanceId
@@ -116,15 +99,8 @@ export class TenantUseCase {
             targetGroupArn = listenerResources!.targetGroupArn;
             listenerRuleArn = listenerResources!.listenerRuleArn;
 
-            console.log(`🌍 CloudFront will route ${domain} through ALB`);
-
-            // ✅ Generate token
             const token = jwt.sign(
-                {
-                    tenantId,
-                    subdomain,
-                    email,
-                },
+                { tenantId, subdomain, email },
                 process.env.JWT_SECRET!,
                 { expiresIn: "1d" }
             );
@@ -140,7 +116,7 @@ export class TenantUseCase {
                 },
             };
         } catch (error) {
-            console.error("❌ Provisioning failed. Starting cleanup...");
+            console.error("❌ Provisioning failed. Rolling back...");
 
             if (instanceId) await CleanupResources.terminateEC2(instanceId);
             if (targetGroupArn) await CleanupResources.deleteTargetGroup(targetGroupArn);
@@ -151,4 +127,5 @@ export class TenantUseCase {
             throw new Error("❌ Tenant provisioning failed and cleanup was triggered.");
         }
     }
+
 }

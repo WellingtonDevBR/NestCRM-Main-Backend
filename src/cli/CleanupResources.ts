@@ -85,12 +85,12 @@ export class CleanupResources {
     }
 
     static async deleteTenantTables(subdomain: string) {
-        const tables = [
-            `NestCRM-${subdomain}-CustomFields`,
-            `NestCRM-${subdomain}-Customer`
+        const tableSuffixes = [
+            "CustomFields", "Customer", "Order", "Payment", "Support", "Interaction"
         ];
 
-        for (const tableName of tables) {
+        for (const suffix of tableSuffixes) {
+            const tableName = `NestCRM-${subdomain}-${suffix}`;
             try {
                 console.log(`🗑️ Deleting DynamoDB table: ${tableName}`);
                 await docClient.send(new DeleteTableCommand({ TableName: tableName }));
@@ -103,5 +103,4 @@ export class CleanupResources {
             }
         }
     }
-
 }
