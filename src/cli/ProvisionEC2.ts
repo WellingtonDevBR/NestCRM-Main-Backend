@@ -18,7 +18,6 @@ const credentials = {
 const ec2 = new EC2Client({ region, credentials });
 
 export class ProvisionEC2 {
-    // 👇 Just set your role name here (must already exist)
     private static readonly instanceProfileName = "TenantEC2Role";
 
     static async launchInstance(subdomain: string) {
@@ -43,17 +42,27 @@ export class ProvisionEC2 {
                     },
                 ],
                 UserData: Buffer.from(`#!/bin/bash
-                    sudo yum install -y git nodejs unzip
+                    # Install Node.js 18 using NodeSource
+                    curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
+                    sudo yum install -y nodejs git unzip
+
+                    # Add Yarn repo and install it
                     curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
                     sudo yum install -y yarn
+
+                    # Clone the backend and install dependencies
                     cd /home/ec2-user
                     git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
                     cd NestCRM-Dashboard-Backend
                     yarn install
-                    sudo npm install pm2 -g
-                    pm2 start yarn --interpreter bash --name my-server -- ts-node-dev src/server.ts
+
+                    # Install PM2 and run the app
+                    sudo npm install -g pm2
+                    pm2 start yarn --name my-server -- start
                     pm2 save
-                    pm2 startup
+
+                    # Set PM2 to restart on reboot
+                    eval $(pm2 startup systemd -u ec2-user --hp /home/ec2-user)
                 `).toString("base64"),
             });
 
