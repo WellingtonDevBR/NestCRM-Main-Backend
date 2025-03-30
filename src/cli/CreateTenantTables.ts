@@ -16,8 +16,8 @@ const TABLE_DEFINITIONS: {
         { name: "Support", key: { name: "id", type: "S" } },
         { name: "Interaction", key: { name: "id", type: "S" } },
         { name: "CustomFields", key: { name: "PK", type: "S" } },
+        { name: "Prediction", key: { name: "id", type: "S" } }, // ✅ Adicionado aqui
     ];
-
 
 export const createTablesForTenant = async (subdomain: string) => {
     const client = new DynamoDBClient({

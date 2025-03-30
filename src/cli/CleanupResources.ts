@@ -86,7 +86,7 @@ export class CleanupResources {
 
     static async deleteTenantTables(subdomain: string) {
         const tableSuffixes = [
-            "CustomFields", "Customer", "Order", "Payment", "Support", "Interaction"
+            "CustomFields", "Customer", "Order", "Payment", "Support", "Interaction", "Prediction"
         ];
 
         for (const suffix of tableSuffixes) {
