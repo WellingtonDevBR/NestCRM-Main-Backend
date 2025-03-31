@@ -1,5 +1,12 @@
-import { DynamoDBClient, CreateTableCommand, ScalarAttributeType } from "@aws-sdk/client-dynamodb";
+import {
+    DynamoDBClient,
+    CreateTableCommand,
+    ScalarAttributeType,
+    KeySchemaElement,
+    AttributeDefinition,
+} from "@aws-sdk/client-dynamodb";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const REGION = process.env.AWS_REGION!;
@@ -9,6 +16,7 @@ const SECRET_KEY = process.env.AWS_SECRET_ACCESS_KEY!;
 const TABLE_DEFINITIONS: {
     name: string;
     key: { name: string; type: ScalarAttributeType };
+    sortKey?: { name: string; type: ScalarAttributeType };
 }[] = [
         { name: "Customer", key: { name: "id", type: "S" } },
         { name: "Order", key: { name: "id", type: "S" } },
@@ -16,7 +24,11 @@ const TABLE_DEFINITIONS: {
         { name: "Support", key: { name: "id", type: "S" } },
         { name: "Interaction", key: { name: "id", type: "S" } },
         { name: "CustomFields", key: { name: "PK", type: "S" } },
-        { name: "Prediction", key: { name: "id", type: "S" } },
+        {
+            name: "Prediction",
+            key: { name: "id", type: "S" },
+            sortKey: { name: "latest_prediction_at", type: "S" }, // Sort key here
+        },
     ];
 
 export const createTablesForTenant = async (subdomain: string) => {
@@ -28,13 +40,32 @@ export const createTablesForTenant = async (subdomain: string) => {
         },
     });
 
-    for (const { name, key } of TABLE_DEFINITIONS) {
+    for (const { name, key, sortKey } of TABLE_DEFINITIONS) {
         const tableName = `NestCRM-${subdomain}-${name}`;
+
+        const AttributeDefinitions: AttributeDefinition[] = [
+            { AttributeName: key.name, AttributeType: key.type },
+        ];
+        const KeySchema: KeySchemaElement[] = [
+            { AttributeName: key.name, KeyType: "HASH" },
+        ];
+
+        if (sortKey) {
+            AttributeDefinitions.push({
+                AttributeName: sortKey.name,
+                AttributeType: sortKey.type,
+            });
+            KeySchema.push({
+                AttributeName: sortKey.name,
+                KeyType: "RANGE",
+            });
+        }
+
         const command = new CreateTableCommand({
             TableName: tableName,
             BillingMode: "PAY_PER_REQUEST",
-            AttributeDefinitions: [{ AttributeName: key.name, AttributeType: key.type }],
-            KeySchema: [{ AttributeName: key.name, KeyType: "HASH" }],
+            AttributeDefinitions,
+            KeySchema,
         });
 
         try {
