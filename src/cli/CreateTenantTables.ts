@@ -27,7 +27,12 @@ const TABLE_DEFINITIONS: {
         {
             name: "Prediction",
             key: { name: "id", type: "S" },
-            sortKey: { name: "latest_prediction_at", type: "S" }, // Sort key here
+            sortKey: { name: "latest_prediction_at", type: "S" },
+        },
+        {
+            name: "RiskAlert",
+            key: { name: "id", type: "S" },
+            sortKey: { name: "created_at", type: "S" },
         },
     ];
 
