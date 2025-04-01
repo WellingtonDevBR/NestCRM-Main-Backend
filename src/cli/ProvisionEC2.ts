@@ -58,11 +58,13 @@ export class ProvisionEC2 {
 
                     # Install PM2 and run the app
                     sudo npm install -g pm2
-                    pm2 start yarn --name my-server -- start
+                    pm2 start yarn --interpreter bash --name my-server -- dev
                     pm2 save
 
                     # Set PM2 to restart on reboot
-                    eval $(pm2 startup systemd -u ec2-user --hp /home/ec2-user)
+                    pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                    sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                    pm2 save
                 `).toString("base64"),
             });
 
