@@ -16,7 +16,7 @@ export class CreateDNSRecord {
     static async addSubdomain(subdomain: string, publicIp: string) {
         const domainName = `${subdomain}.nestcrm.com.au.`;
 
-        console.log(`🔗 Mapping ${domainName} to IP: ${publicIp}`);
+
 
         const ALB_DNS_NAME = "NestCRM-ALB-111803615.us-east-2.elb.amazonaws.com";
 
@@ -39,12 +39,12 @@ export class CreateDNSRecord {
 
 
         try {
-            console.log("📡 Sending Route 53 request...");
+
             const response = await route53.send(command);
-            console.log(`✅ DNS Created: ${domainName} -> ${publicIp}`);
-            console.log("📝 Route 53 Response:", JSON.stringify(response, null, 2));
+
+
         } catch (error: any) {
-            console.error("❌ Failed to create DNS record:", error);
+            console.error(" Failed to create DNS record:", error);
         }
     }
 }

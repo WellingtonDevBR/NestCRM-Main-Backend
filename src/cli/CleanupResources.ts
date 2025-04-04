@@ -24,35 +24,35 @@ const route53 = new Route53Client({ region: process.env.AWS_REGION });
 export class CleanupResources {
     static async terminateEC2(instanceId: string) {
         try {
-            console.log(`🗑️ Terminating EC2 instance ${instanceId}`);
+
             await ec2.send(new TerminateInstancesCommand({ InstanceIds: [instanceId] }));
         } catch (error) {
-            console.error("⚠️ Failed to terminate EC2:", error);
+            console.error(" Failed to terminate EC2:", error);
         }
     }
 
     static async deleteTargetGroup(targetGroupArn: string) {
         try {
-            console.log(`🗑️ Deleting Target Group ${targetGroupArn}`);
+
             await elb.send(new DeleteTargetGroupCommand({ TargetGroupArn: targetGroupArn }));
         } catch (error) {
-            console.error("⚠️ Failed to delete target group:", error);
+            console.error(" Failed to delete target group:", error);
         }
     }
 
     static async deleteListenerRule(ruleArn: string) {
         try {
-            console.log(`🗑️ Deleting Listener Rule ${ruleArn}`);
+
             await elb.send(new DeleteRuleCommand({ RuleArn: ruleArn }));
         } catch (error) {
-            console.error("⚠️ Failed to delete listener rule:", error);
+            console.error(" Failed to delete listener rule:", error);
         }
     }
 
     static async deleteDNSRecord(subdomain: string) {
         const domainName = `${subdomain}.nestcrm.com.au.`;
         try {
-            console.log(`🗑️ Deleting DNS Record ${domainName}`);
+
             await route53.send(new ChangeResourceRecordSetsCommand({
                 HostedZoneId: process.env.AWS_ROUTE53_ZONE_ID!,
                 ChangeBatch: {
@@ -68,19 +68,19 @@ export class CleanupResources {
                 }
             }));
         } catch (error) {
-            console.error("⚠️ Failed to delete DNS record:", error);
+            console.error(" Failed to delete DNS record:", error);
         }
     }
 
     static async deleteTenantRecord(tenantId: string) {
         try {
-            console.log(`🗑️ Deleting tenant record ${tenantId}`);
+
             await docClient.send(new DeleteCommand({
                 TableName: process.env.DYNAMODB_TENANT_TABLE!,
                 Key: { ID: tenantId }
             }));
         } catch (error) {
-            console.error("⚠️ Failed to delete tenant from DB:", error);
+            console.error(" Failed to delete tenant from DB:", error);
         }
     }
 
@@ -92,13 +92,13 @@ export class CleanupResources {
         for (const suffix of tableSuffixes) {
             const tableName = `NestCRM-${subdomain}-${suffix}`;
             try {
-                console.log(`🗑️ Deleting DynamoDB table: ${tableName}`);
+
                 await docClient.send(new DeleteTableCommand({ TableName: tableName }));
             } catch (error: any) {
                 if (error.name === "ResourceNotFoundException") {
-                    console.warn(`⚠️ Table ${tableName} does not exist`);
+                    console.warn(` Table ${tableName} does not exist`);
                 } else {
-                    console.error(`❌ Failed to delete table ${tableName}:`, error);
+                    console.error(` Failed to delete table ${tableName}:`, error);
                 }
             }
         }

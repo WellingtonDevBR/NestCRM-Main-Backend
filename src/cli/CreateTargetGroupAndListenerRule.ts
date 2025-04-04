@@ -28,7 +28,7 @@ export class CreateTargetGroupAndListenerRule {
         const albArn = process.env.AWS_ALB_ARN!;
         const listenerArn = process.env.AWS_LISTENER_ARN!;
 
-        console.log(`🧱 Creating Target Group for ${subdomain}...`);
+
 
         try {
             // Step 1: Create Target Group
@@ -46,9 +46,9 @@ export class CreateTargetGroupAndListenerRule {
             );
 
             const targetGroupArn = targetGroupResponse.TargetGroups?.[0]?.TargetGroupArn;
-            if (!targetGroupArn) throw new Error("❌ Failed to create Target Group");
+            if (!targetGroupArn) throw new Error(" Failed to create Target Group");
 
-            console.log(`✅ Target Group created: ${targetGroupArn}`);
+
 
             // Step 2: Register EC2 instance
             await elb.send(
@@ -57,7 +57,7 @@ export class CreateTargetGroupAndListenerRule {
                     Targets: [{ Id: instanceId, Port: TARGET_GROUP_PORT }],
                 })
             );
-            console.log(`🔗 EC2 instance ${instanceId} registered to Target Group`);
+
 
             // Step 3: Create Listener Rule
             const listenerRuleResult: CreateRuleCommandOutput = await elb.send(
@@ -80,17 +80,17 @@ export class CreateTargetGroupAndListenerRule {
             );
 
             const listenerRuleArn = listenerRuleResult.Rules?.[0]?.RuleArn;
-            if (!listenerRuleArn) throw new Error("❌ Failed to create Listener Rule");
+            if (!listenerRuleArn) throw new Error(" Failed to create Listener Rule");
 
-            console.log(`✅ Listener rule created for ${subdomain}.nestcrm.com.au → ${targetGroupArn}`);
-            console.log(`🧾 Listener Rule ARN: ${listenerRuleArn}`);
+
+
 
             return {
                 targetGroupArn,
                 listenerRuleArn,
             };
         } catch (error) {
-            console.error("🚨 Error during setup:", error);
+            console.error(" Error during setup:", error);
             return null; // or re-throw if you want to handle it higher up
         }
     }

@@ -27,10 +27,10 @@ export async function createCustomerTableForTenant(tenantSubdomain: string) {
 
     try {
         await client.send(command);
-        console.log(`✅ Table ${tableName} created`);
+
     } catch (err: any) {
         if (err.name === "ResourceInUseException") {
-            console.log(`ℹ️ Table ${tableName} already exists`);
+
         } else {
             throw err;
         }

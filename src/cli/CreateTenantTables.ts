@@ -75,12 +75,12 @@ export const createTablesForTenant = async (subdomain: string) => {
 
         try {
             await client.send(command);
-            console.log(`✅ Created table: ${tableName}`);
+
         } catch (err: any) {
             if (err.name === "ResourceInUseException") {
-                console.log(`ℹ️ Table already exists: ${tableName}`);
+
             } else {
-                console.error(`❌ Failed to create table: ${tableName}`, err);
+                console.error(` Failed to create table: ${tableName}`, err);
             }
         }
     }

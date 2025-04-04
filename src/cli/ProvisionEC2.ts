@@ -72,7 +72,7 @@ export class ProvisionEC2 {
             const instanceId = result.Instances?.[0]?.InstanceId;
             if (!instanceId) throw new Error("Failed to launch EC2 instance");
 
-            console.log(`🕒 Waiting for instance ${instanceId} to be running...`);
+
             await waitUntilInstanceRunning(
                 { client: ec2, maxWaitTime: 60 },
                 { InstanceIds: [instanceId] }
@@ -86,10 +86,10 @@ export class ProvisionEC2 {
 
             if (!publicIp) throw new Error("Instance running but no public IP");
 
-            console.log(`✅ EC2 Instance Ready: ${instanceId} - ${publicIp}`);
+
             return { instanceId, publicIp };
         } catch (error) {
-            console.error("❌ EC2 Provisioning Failed:", error);
+            console.error(" EC2 Provisioning Failed:", error);
             throw error;
         }
     }

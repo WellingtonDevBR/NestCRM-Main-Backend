@@ -62,9 +62,9 @@ app.get("/api/validate", (req: Request, res: Response) => {
 });
 
 app.get('/api/status', (_req: Request, res: Response) => {
-    res.json({ message: '🟢 API is working fine!' });
+    res.json({ message: 'API is working fine!' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ NestCRM Backend is running on http://0.0.0.0:${PORT}`);
+
 });

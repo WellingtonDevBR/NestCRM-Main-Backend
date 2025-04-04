@@ -29,7 +29,7 @@ export class TenantUseCase {
             { expiresIn: "1d" }
         );
 
-        console.log("🔐 Login successful, JWT generated");
+
 
         return {
             message: "Login successful",
@@ -51,14 +51,14 @@ export class TenantUseCase {
         email: string;
         password: string;
     }) {
-        console.log("🟢 Received Sign-Up Request:", { companyName, email });
+
 
         if (!companyName || !email || !password) {
-            throw new Error("❌ Missing required fields");
+            throw new Error(" Missing required fields");
         }
 
         const existingTenant = await tenantRepo.findByEmail(email);
-        if (existingTenant) throw new Error("❌ Tenant with this email already exists.");
+        if (existingTenant) throw new Error(" Tenant with this email already exists.");
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const subdomain = companyName.toLowerCase().replace(/\s+/g, "");
@@ -81,14 +81,14 @@ export class TenantUseCase {
                 CreatedAt: new Date().toISOString(),
             };
 
-            console.log("📝 Creating Tenant in DB...");
+
             await tenantRepo.create(newTenant);
 
-            console.log(`📦 Creating all DynamoDB tables for ${subdomain}...`);
-            await createTablesForTenant(subdomain);
-            console.log("✅ Tables created!");
 
-            console.log(`🚀 Provisioning EC2 for ${companyName}...`);
+            await createTablesForTenant(subdomain);
+
+
+
             const ec2Instance = await ProvisionEC2.launchInstance(subdomain);
             instanceId = ec2Instance.instanceId;
 
@@ -116,7 +116,7 @@ export class TenantUseCase {
                 },
             };
         } catch (error) {
-            console.error("❌ Provisioning failed. Rolling back...");
+            console.error(" Provisioning failed. Rolling back...");
 
             if (instanceId) await CleanupResources.terminateEC2(instanceId);
             if (targetGroupArn) await CleanupResources.deleteTargetGroup(targetGroupArn);
@@ -124,7 +124,7 @@ export class TenantUseCase {
             await CleanupResources.deleteTenantTables(subdomain);
             await CleanupResources.deleteTenantRecord(tenantId);
 
-            throw new Error("❌ Tenant provisioning failed and cleanup was triggered.");
+            throw new Error(" Tenant provisioning failed and cleanup was triggered.");
         }
     }
 

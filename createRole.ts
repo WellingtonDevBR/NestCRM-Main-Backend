@@ -38,7 +38,7 @@ async function createEC2Role() {
                 }),
             })
         );
-        console.log("✅ IAM Role created");
+
 
         // 2. Attach required policies
         const policies = [
@@ -54,7 +54,7 @@ async function createEC2Role() {
                 })
             );
         }
-        console.log("✅ Policies attached");
+
 
         // 3. Create Instance Profile
         await iam.send(
@@ -71,12 +71,12 @@ async function createEC2Role() {
             })
         );
 
-        console.log(`✅ Instance Profile "${roleName}" created and role attached`);
+
     } catch (err: any) {
         if (err.name === "EntityAlreadyExists") {
-            console.log("ℹ️ Role or profile already exists — skipping");
+
         } else {
-            console.error("❌ Failed to create IAM role:", err);
+            console.error(" Failed to create IAM role:", err);
         }
     }
 }
