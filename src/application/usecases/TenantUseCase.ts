@@ -6,8 +6,10 @@ import { CreateTargetGroupAndListenerRule } from "../../cli/CreateTargetGroupAnd
 import { CleanupResources } from "../../cli/CleanupResources";
 import jwt from "jsonwebtoken";
 import { createTablesForTenant } from "../../cli/CreateTenantTables";
+import { SubscriptionRepositoryImpl } from "../../infrastructure/database/SubscriptionRepositoryImpl";
 
 const tenantRepo = new TenantRepositoryImpl();
+const subscriptionRepo = new SubscriptionRepositoryImpl();
 
 export class TenantUseCase {
     static async login({ email, password }: { email: string; password: string }) {
@@ -43,13 +45,35 @@ export class TenantUseCase {
     }
 
     static async signUp({
+        firstName,
+        lastName,
         companyName,
         email,
         password,
+        subdomain,
+        domain,
+        planId,
+        subscription
     }: {
+        firstName: string;
+        lastName: string;
         companyName: string;
         email: string;
         password: string;
+        subdomain: string;
+        domain: string;
+        planId: string;
+        subscription: {
+            planId: string;
+            stripeSubscriptionId: string;
+            stripeCustomerId: string;
+            currency: string;
+            interval: string;
+            amount: number;
+            trialDays: number;
+            status: string;
+            trialEndsAt: string;
+        };
     }) {
 
 
@@ -61,33 +85,55 @@ export class TenantUseCase {
         if (existingTenant) throw new Error(" Tenant with this email already exists.");
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const subdomain = companyName.toLowerCase().replace(/\s+/g, "");
-        const domain = `${subdomain}.nestcrm.com.au`;
+        domain = `${subdomain}.nestcrm.com.au`;
+        subdomain = subdomain.toLowerCase().replace(/\s+/g, "");
         const tenantId = uuidv4();
 
         let instanceId: string | null = null;
         let targetGroupArn: string | null = null;
         let listenerRuleArn: string | null = null;
 
+        const now = new Date().toISOString();
+        const subscriptionId = uuidv4();
+
         try {
             const newTenant = {
                 ID: tenantId,
+                FirstName: firstName,
+                LastName: lastName,
                 CompanyName: companyName,
                 Email: email,
                 Password: hashedPassword,
                 Subdomain: subdomain,
                 Domain: domain,
+                planId: planId,
                 Status: "active",
-                CreatedAt: new Date().toISOString(),
+                CreatedAt: now
             };
 
-
             await tenantRepo.create(newTenant);
-
+            await subscriptionRepo.create({
+                ID: subscriptionId,
+                TenantID: tenantId,
+                StripeCustomerID: subscription.stripeCustomerId,
+                StripeSubscriptionID: subscription.stripeSubscriptionId,
+                PlanID: subscription.planId,
+                Currency: subscription.currency,
+                Interval: subscription.interval,
+                Amount: subscription.amount,
+                TrialDays: subscription.trialDays,
+                Status: subscription.status,
+                StartDate: now,
+                CurrentPeriodStart: now,
+                CurrentPeriodEnd: subscription.trialEndsAt,
+                TrialEndDate: subscription.trialEndsAt,
+                CancelAtPeriodEnd: false,
+                CanceledAt: null,
+                CreatedAt: now,
+                UpdatedAt: now
+            });
 
             await createTablesForTenant(subdomain);
-
-
 
             const ec2Instance = await ProvisionEC2.launchInstance(subdomain);
             instanceId = ec2Instance.instanceId;
